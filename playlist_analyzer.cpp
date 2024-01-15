@@ -2,9 +2,22 @@
 #include <iostream>
 #include <fstream>
 
-void analyzePlaylist(const std::string& play_list_path_)
+std::string generate_multiplied_separator_line(const std::string& separator, size_t length)
 {
-    std::vector<Play_list_link> play_list_links;
+    std::string multiplied_separator = separator;
+    
+    for (size_t i = 1; i < length; i++)
+    {
+        multiplied_separator += separator;
+    }
+    
+    return multiplied_separator;
+}
+
+
+void analyze_playlist(const std::string& play_list_path_)
+{
+    std::vector<play_list_link> play_list_links;
     
     // Шаг 1: Чтение ссылок из плейлиста
     std::ifstream file(play_list_path_);
@@ -15,6 +28,9 @@ void analyzePlaylist(const std::string& play_list_path_)
     }
     
     std::string line;
+    // размеры указанны не 0, на случай, если что-то сломается
+    size_t max_length = 30; // Переменная для хранения размера самой длинной ссылки
+    size_t min_length = 30; // Переменная для хранения размера самой короткой ссылки
     while (std::getline(file, line))
     {
         if (line.find("<location>") != std::string::npos)
@@ -29,16 +45,25 @@ void analyzePlaylist(const std::string& play_list_path_)
                 path = path.substr(std::string("file:///").length());
             }
             
-            Play_list_link link;
+            play_list_link link;
             link.path_to_file = path;
             play_list_links.push_back(link);
+            
+            // Обновление переменной max_length/min_length, если найдена более длинная/короткая ссылка
+            if (path.length() > max_length)
+            {
+                max_length = path.length();
+            }
+            else
+            {
+                min_length = path.length();
+            }
         }
     }
     
     file.close();
     
     // Шаг 3: Проверка ссылок
-    //std::string saved_file_path = "/home/rastyle/CLionProjects/XSPF_Analyzer/broken_links.txt";
     std::ofstream output_file(saved_file_path);
     if (!output_file)
     {
@@ -46,8 +71,27 @@ void analyzePlaylist(const std::string& play_list_path_)
         return;
     }
     
-    std::cout << "#### Сломанные ссылки: ####" << std::endl;
-    output_file << "#### Сломанные ссылки: ####" << std::endl;
+    // Выравниваем сепараторы по длине самой большой ссылки
+    std::string separator_line_equals = "=";
+    size_t without_msg_eighteen = 18;
+    size_t len_with_eighteen_max = max_length + without_msg_eighteen;
+    size_t len_without_eighteen_max = max_length;
+    std::string multiplied_separator_line_equals =
+            generate_multiplied_separator_line(separator_line_equals, len_with_eighteen_max);
+    std::string multiplied_separator_line_equals_without_eighteen =
+            generate_multiplied_separator_line(separator_line_equals, len_without_eighteen_max);
+    
+    // Выравниваем сепараторы по длине самой короткой ссылки
+    std::string separator_line_hash = "#";
+    size_t len_with_eighteen_min = min_length / 2 + without_msg_eighteen;
+    std::string multiplied_separator_line_hash =
+            generate_multiplied_separator_line(separator_line_hash, len_with_eighteen_min);
+    
+    
+    std::cout << multiplied_separator_line_equals << std::endl << std::endl;
+    output_file << multiplied_separator_line_equals << std::endl << std::endl;
+    std::cout << multiplied_separator_line_hash << " Сломанные ссылки: " << multiplied_separator_line_hash << std::endl;
+    output_file << multiplied_separator_line_hash <<" Сломанные ссылки: "<< multiplied_separator_line_hash << std::endl;
     for (const auto& link : play_list_links)
     {
         std::ifstream test_file(link.path_to_file);
@@ -60,11 +104,11 @@ void analyzePlaylist(const std::string& play_list_path_)
         test_file.close();
     }
     
-    std::cout << "====================" << std::endl;
-    output_file << "====================" << std::endl;
+    std::cout << std::endl << multiplied_separator_line_equals << std::endl << std::endl;
+    output_file << std::endl << multiplied_separator_line_equals_without_eighteen << std::endl << std::endl;
     
-    std::cout << "#### Рабочие ссылки: ####" << std::endl;
-    output_file << "#### Рабочие ссылки: ####" << std::endl;
+    std::cout << multiplied_separator_line_hash << " Рабочие ссылки: " << multiplied_separator_line_hash << std::endl;
+    output_file << multiplied_separator_line_hash << " Рабочие ссылки: " << multiplied_separator_line_hash << std::endl;
     for (const auto& link : play_list_links)
     {
         std::ifstream test_file(link.path_to_file);
