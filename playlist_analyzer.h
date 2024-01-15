@@ -6,12 +6,14 @@
 #include "config.h"
 #include "config_example.h"
 
-struct Play_list_link
+struct play_list_link
 {
     std::string path_to_file;
 };
 
 // Функция для анализа плейлиста
-void analyzePlaylist(const std::string& play_list_path);
+std::string generate_multiplied_separator_line(const std::string& separator, size_t length);
+void analyze_playlist(const std::string& play_list_path);
+
 
 #endif // PLAYLIST_ANALYZER_H

@@ -11,3 +11,7 @@ This feature helps you identify any additions, removals, or modifications made b
 4. 📂➕💾 Create a new file with new files by difference. 
 It offers the ability to create a new XSPF file that contains the files present in one version but not in another. 
 This feature helps you keep your playlist up to date by adding any new files that might have been added since the last update.
+
+# Realisation/examples
+1. For "analysis for broken links" will created `broken_link.txt` file.
+2. 
