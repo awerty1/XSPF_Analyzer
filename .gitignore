@@ -1,0 +1,59 @@
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
+*.a
+*.lib
+
+# Executables
+*.exe
+*.out
+*.app
+
+
+# clion cmake-build-debug
+# Отключить файлы проекта, созданные CLion
+.idea/
+
+# Отключить временные файлы, созданные компилятором CMake
+CMakeLists.txt.user
+cmake-build-debug/
+CMakeFiles/
+
+# Отключить скомпилированные файлы, созданные компилятором C/C++
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Отключить файлы, созданные системой сборки Make
+Makefile
+Makefile.*
+
+# Отключить файлы с настройками редактора
+*.swp
+*.swo
+*~
