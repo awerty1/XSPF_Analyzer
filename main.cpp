@@ -1,7 +1,11 @@
 #include <iostream>
+#include "playlist_analyzer.h"
 
 int main()
 {
-    std::cout << "Hello, World!" << std::endl;
+    //std::string playlistPath = "/home/rastyle/CLionProjects/XSPF_Analyzer/playlist.xspf";
+    
+    analyzePlaylist(play_list_path);
+    
     return 0;
 }
