@@ -1,6 +1,6 @@
-#include "playlist_analyzer.h"
 #include <iostream>
 #include <fstream>
+#include "playlist_analyzer.h"
 
 std::string generate_multiplied_separator_line(const std::string& separator, size_t length)
 {
@@ -122,4 +122,57 @@ void analyze_playlist(const std::string& play_list_path_)
     }
     
     output_file.close();
+}
+
+void replace_path_simple(const std::string& play_list_path_, const std::string& new_path_)
+{
+    // 1. Копируем файл плейлиста и дописываем в него новую ссылку
+    std::ifstream input(play_list_path_);
+    std::ofstream output(play_list_path_ + std::string("_edited.xspf"));
+    
+    if (!input.is_open() || !output.is_open())
+    {
+        std::cerr << "Не удалось открыть файлы" << std::endl;
+        return;
+    }
+    
+    std::string line;
+    while (getline(input, line))
+    {
+        // Шаг 3: Проверяем строки, содержащие <location>
+        size_t start_pos = line.find("<location>");
+        size_t end_pos = line.find("</location>");
+        
+        if (start_pos != std::string::npos && end_pos != std::string::npos)
+        {
+            // Шаг 4: Извлекаем путь до файла между <location> и </location>
+            std::string path = line.substr(start_pos + 10, end_pos - (start_pos + 10));
+            
+            // Производим замену пути файла
+            size_t file_start_pos = path.find("file:///");
+            if (file_start_pos != std::string::npos)
+            {
+                size_t last_slash_pos = path.find_last_of('/');
+                if (last_slash_pos != std::string::npos)
+                {
+                    std::string new_path_after_changed = path.substr(0, file_start_pos + 8) + new_path_ + path.substr(last_slash_pos);
+                    line.replace(start_pos + 10, end_pos - (start_pos + 10), new_path_after_changed);
+                }
+            }
+        }
+        
+        // Записываем обновленную строку в новый файл
+        output << line << std::endl;
+    }
+    
+    // Шаг 2: Закрываем файлы
+    input.close();
+    output.close();
+    
+    std::cout << "Простая замена ссылок завершена. Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
+}
+
+void replace_path_smart()
+{
+    std::cout << "Not realised" << std::endl;
 }
