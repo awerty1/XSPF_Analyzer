@@ -63,3 +63,4 @@ Makefile.*
 broken_links.txt
 config.h
 files_not_found.txt
+*.tmp

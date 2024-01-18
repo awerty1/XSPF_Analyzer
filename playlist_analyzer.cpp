@@ -19,14 +19,15 @@ static std::string generate_multiplied_separator_line(const std::string& separat
 
 void analyze_playlist(const std::string& play_list_path_)
 {
-    std::vector<play_list_link> play_list_links;
+    std::vector<play_list_path> play_list_paths;
     
     // Шаг 1: Чтение ссылок из плейлиста
     std::ifstream file(play_list_path_);
-    if (!file)
+    if (!file.is_open())
     {
-        std::cerr << "Ошибка открытия файла: " << play_list_path_ << std::endl;
-        return;
+        throw std::runtime_error("Ошибка открытия файла: " + play_list_path_);
+//        std::cerr << "Ошибка открытия файла: " << play_list_path_ << std::endl;
+//        return;
     }
     
     std::string line;
@@ -47,9 +48,9 @@ void analyze_playlist(const std::string& play_list_path_)
                 path = path.substr(std::string("file:///").length());
             }
             
-            play_list_link link;
+            play_list_path link;
             link.path_to_file = path;
-            play_list_links.push_back(link);
+            play_list_paths.push_back(link);
             
             // Обновление переменной max_length/min_length, если найдена более длинная/короткая ссылка
             if (path.length() > max_length)
@@ -94,7 +95,7 @@ void analyze_playlist(const std::string& play_list_path_)
     output_file << multiplied_separator_line_equals << std::endl << std::endl;
     std::cout << multiplied_separator_line_hash << " Сломанные ссылки: " << multiplied_separator_line_hash << std::endl;
     output_file << multiplied_separator_line_hash <<" Сломанные ссылки: "<< multiplied_separator_line_hash << std::endl;
-    for (const auto& link : play_list_links)
+    for (const auto& link : play_list_paths)
     {
         std::ifstream test_file(link.path_to_file);
         if (!test_file)
@@ -111,7 +112,7 @@ void analyze_playlist(const std::string& play_list_path_)
     
     std::cout << multiplied_separator_line_hash << " Рабочие ссылки: " << multiplied_separator_line_hash << std::endl;
     output_file << multiplied_separator_line_hash << " Рабочие ссылки: " << multiplied_separator_line_hash << std::endl;
-    for (const auto& link : play_list_links)
+    for (const auto& link : play_list_paths)
     {
         std::ifstream test_file(link.path_to_file);
         if (test_file)
@@ -174,18 +175,18 @@ void replace_path_simple(const std::string& play_list_path_, const std::string& 
     std::cout << "Простая замена ссылок завершена. Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
 }
 
-void replace_path_smart(const std::string& playlist_path_, const std::string& directory_path)
+void replace_path_smart(const std::string& play_list_path_, const std::string& directory_path)
 {
-    static const std::string new_playlist_path = playlist_path_ + "_smedited.xspf";
+    static const std::string new_playlist_path = play_list_path_ + "_smedited.xspf";
     static const std::string not_found_path = "/home/rastyle/CLionProjects/XSPF_Analyzer/files_not_found.txt";
     
-    std::ifstream src_file(playlist_path_);
+    std::ifstream src_file(play_list_path_);
     std::ofstream dest_file(new_playlist_path);
     
-    if (!src_file || !dest_file)
+    if (!src_file.is_open() || !dest_file.is_open())
     {
-        std::cout << "Ошибка при открытии файлов" << std::endl;
-        return;
+        std::filesystem::remove(new_playlist_path + ".tmp");
+        throw std::runtime_error("Ошибка при открытии файлов");
     }
     
     dest_file << src_file.rdbuf();
@@ -193,69 +194,96 @@ void replace_path_smart(const std::string& playlist_path_, const std::string& di
     src_file.close();
     dest_file.close();
     
-    std::ifstream playlist_file(new_playlist_path);
-    std::ofstream not_found_file(not_found_path);
-    std::ofstream temp_file(new_playlist_path + ".tmp");
-    
-    if (!playlist_file || !not_found_file || !temp_file)
+    try
     {
-        std::cout << "Ошибка при открытии файлов" << std::endl;
-        return;
-    }
-    
-    std::string line;
-    
-    while (std::getline(playlist_file, line))
-    {
-        if (line.find("<location>") != std::string::npos && line.find("</location>") != std::string::npos)
+        std::ifstream playlist_file(new_playlist_path);
+        std::ofstream not_found_file(not_found_path);
+        std::ofstream temp_file(new_playlist_path + ".tmp");
+        
+        if (!playlist_file.is_open() || !not_found_file.is_open() || !temp_file.is_open())
         {
-            std::string location = line.substr(line.find("<location>") + 10);
-            location = location.substr(0, location.find("</location>"));
-            
-            std::string file_name = location.substr(location.find_last_of('/') + 1);
-            
-            std::string percent_replacement = " ";
-            size_t percent_pos = file_name.find("%20");
-            
-            while (percent_pos != std::string::npos)
+            std::filesystem::remove(new_playlist_path + ".tmp");
+            throw std::runtime_error("Ошибка при открытии файлов");
+        }
+        
+        std::string line;
+        
+        while (std::getline(playlist_file, line))
+        {
+            if (line.find("<location>") != std::string::npos && line.find("</location>") != std::string::npos)
             {
-                file_name.replace(percent_pos, 3, percent_replacement);
-                percent_pos = file_name.find("%20", percent_pos + percent_replacement.length());
-            }
-            
-            std::string file_path;
-            bool found = false;
-            
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(directory_path))
-            {
-                if (!entry.is_directory() && entry.path().filename() == file_name)
+                std::string location = line.substr(line.find("<location>") + 10);
+                location = location.substr(0, location.find("</location>"));
+                
+                std::string file_name = location.substr(location.find_last_of('/') + 1);
+                
+                std::string percent_replacement = " ";
+                size_t percent_pos = file_name.find("%20");
+                
+                while (percent_pos != std::string::npos)
                 {
-                    file_path = entry.path().string();
-                    found = true;
-                    break;
+                    file_name.replace(percent_pos, 3, percent_replacement);
+                    percent_pos = file_name.find("%20", percent_pos + percent_replacement.length());
+                }
+                
+                std::string file_path;
+                bool found = false;
+                
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(directory_path))
+                {
+                    if (!entry.is_directory() && entry.path().filename() == file_name)
+                    {
+                        file_path = entry.path().string();
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (found)
+                {
+                    std::string new_location = "file:///" + file_path;
+                    line.replace(line.find("<location>") + 10, location.length(), new_location);
+                }
+                else
+                {
+                    not_found_file << file_name << std::endl;
                 }
             }
             
-            if (found)
-            {
-                std::string new_location = "file:///" + file_path;
-                line.replace(line.find("<location>") + 10, location.length(), new_location);
-            }
-            else
-            {
-                not_found_file << file_name << std::endl;
-            }
+            temp_file << line << std::endl;
         }
         
-        temp_file << line << std::endl;
+        playlist_file.close();
+        not_found_file.close();
+        temp_file.close();
+        
+        std::filesystem::remove(new_playlist_path);
+        std::filesystem::rename(new_playlist_path + ".tmp", new_playlist_path);
+        
+        std::cout << "Работа закончена!" << std::endl;
     }
-    
-    std::cout << "Работа закончена!" << std::endl;
-    
-    playlist_file.close();
-    not_found_file.close();
-    temp_file.close();
-    
-    std::filesystem::remove(new_playlist_path);
-    std::filesystem::rename(new_playlist_path + ".tmp", new_playlist_path);
+    catch (const std::filesystem::filesystem_error& ex)
+    {
+        std::cout << "Произошла ошибка файловой системы: " << ex.what() << std::endl;
+        
+        // Удаление временного файла
+        std::filesystem::remove(new_playlist_path + ".tmp");
+    }
+    catch (const std::exception& ex)
+    {
+        std::cout << "Произошла непредвиденная ошибка: " << ex.what() << std::endl;
+        
+        // Удаление временного файла
+        std::filesystem::remove(new_playlist_path + ".tmp");
+    }
+}
+
+void checkin_xspf_diff(const std::string& play_list_path)
+{
+    std::cout << "Not realized! " + play_list_path << std::endl;
+}
+
+void create_new_file_with_diff(const std::string& play_list_path)
+{
+    std::cout << "Not realized! " + play_list_path << std::endl;
 }

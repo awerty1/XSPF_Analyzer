@@ -2,7 +2,7 @@
 Program to help with repairs playlists format XSPF.
 
 # Functions
-1. 🧐🔗 Analysis for broken paths. The program helps identify any broken paths within the XSPF playlist. 
+1. 🧐📂 Analysis for broken paths. The program helps identify any broken paths within the XSPF playlist. 
 This can be useful for finding and fixing paths that are no longer valid or accessible.
 2. 🔄📂 Simple replacing paths(!There are no other folders in the folder!). It allows you to replace paths within the 
 playlist to a specific directory in which all files without sub folders are located. This is handy if you want to fix broken paths ones.
@@ -19,4 +19,4 @@ This feature helps you keep your playlist up to date by adding any new files tha
 1. For "analysis for broken paths" will created `broken_link.txt` file with report.
 2. For "simple replacing paths" will create new one with added `_siedited` text in name of file `.xspf`.
 3. For "smart replacing paths" will create new one with added `_smedited` text in name of file `.xspf`. 
-Also will be created `file_not_found.txt`
+Also, will be created `file_not_found.txt`
