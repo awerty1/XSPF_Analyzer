@@ -12,10 +12,10 @@ struct play_list_link
 };
 
 // Функция для анализа плейлиста
-std::string generate_multiplied_separator_line(const std::string& separator, size_t length);
-void analyze_playlist(const std::string& play_list_path);
-void replace_path_simple(const std::string& play_list_path, const std::string& new_path);
-void replace_path_smart(const std::string& play_list_path);
+static std::string generate_multiplied_separator_line(const std::string& separator, size_t length);
+void analyze_playlist(const std::string& PLAY_LIST_PATH);
+void replace_path_simple(const std::string& PLAY_LIST_PATH, const std::string& NEW_PATH);
+void replace_path_smart(const std::string& PLAY_LIST_PATH, const std::string& DIRECTORY_PATH);
 
 
 #endif // PLAYLIST_ANALYZER_H
