@@ -1,8 +1,10 @@
 #include <iostream>
 #include <fstream>
+#include <filesystem>
+#include <algorithm>
 #include "playlist_analyzer.h"
 
-std::string generate_multiplied_separator_line(const std::string& separator, size_t length)
+static std::string generate_multiplied_separator_line(const std::string& separator, size_t length)
 {
     std::string multiplied_separator = separator;
     
@@ -64,7 +66,7 @@ void analyze_playlist(const std::string& play_list_path_)
     file.close();
     
     // Шаг 3: Проверка ссылок
-    std::ofstream output_file(saved_file_path);
+    std::ofstream output_file(SAVED_FILE_PATH);
     if (!output_file)
     {
         std::cerr << "Ошибка создания файла." << std::endl;
@@ -128,7 +130,7 @@ void replace_path_simple(const std::string& play_list_path_, const std::string& 
 {
     // 1. Копируем файл плейлиста и дописываем в него новую ссылку
     std::ifstream input(play_list_path_);
-    std::ofstream output(play_list_path_ + std::string("_edited.xspf"));
+    std::ofstream output(play_list_path_ + std::string("_siedited.xspf"));
     
     if (!input.is_open() || !output.is_open())
     {
@@ -172,7 +174,88 @@ void replace_path_simple(const std::string& play_list_path_, const std::string& 
     std::cout << "Простая замена ссылок завершена. Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
 }
 
-void replace_path_smart()
+void replace_path_smart(const std::string& playlist_path_, const std::string& directory_path)
 {
-    std::cout << "Not realised" << std::endl;
+    static const std::string new_playlist_path = playlist_path_ + "_smedited.xspf";
+    static const std::string not_found_path = "/home/rastyle/CLionProjects/XSPF_Analyzer/files_not_found.txt";
+    
+    std::ifstream src_file(playlist_path_);
+    std::ofstream dest_file(new_playlist_path);
+    
+    if (!src_file || !dest_file)
+    {
+        std::cout << "Ошибка при открытии файлов" << std::endl;
+        return;
+    }
+    
+    dest_file << src_file.rdbuf();
+    
+    src_file.close();
+    dest_file.close();
+    
+    std::ifstream playlist_file(new_playlist_path);
+    std::ofstream not_found_file(not_found_path);
+    std::ofstream temp_file(new_playlist_path + ".tmp");
+    
+    if (!playlist_file || !not_found_file || !temp_file)
+    {
+        std::cout << "Ошибка при открытии файлов" << std::endl;
+        return;
+    }
+    
+    std::string line;
+    
+    while (std::getline(playlist_file, line))
+    {
+        if (line.find("<location>") != std::string::npos && line.find("</location>") != std::string::npos)
+        {
+            std::string location = line.substr(line.find("<location>") + 10);
+            location = location.substr(0, location.find("</location>"));
+            
+            std::string file_name = location.substr(location.find_last_of('/') + 1);
+            
+            std::string percent_replacement = " ";
+            size_t percent_pos = file_name.find("%20");
+            
+            while (percent_pos != std::string::npos)
+            {
+                file_name.replace(percent_pos, 3, percent_replacement);
+                percent_pos = file_name.find("%20", percent_pos + percent_replacement.length());
+            }
+            
+            std::string file_path;
+            bool found = false;
+            
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(directory_path))
+            {
+                if (!entry.is_directory() && entry.path().filename() == file_name)
+                {
+                    file_path = entry.path().string();
+                    found = true;
+                    break;
+                }
+            }
+            
+            if (found)
+            {
+                std::string new_location = "file:///" + file_path;
+                line.replace(line.find("<location>") + 10, location.length(), new_location);
+            }
+            else
+            {
+                not_found_file << file_name << std::endl;
+            }
+        }
+        
+        temp_file << line << std::endl;
+    }
+    
+    std::cout << "Работа закончена!" << std::endl;
+    
+    playlist_file.close();
+    not_found_file.close();
+    temp_file.close();
+    
+    std::filesystem::remove(new_playlist_path);
+    std::filesystem::rename(new_playlist_path + ".tmp", new_playlist_path);
 }
