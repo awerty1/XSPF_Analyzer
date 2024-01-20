@@ -60,7 +60,10 @@ Makefile.*
 
 # Используемые файлы
 *.xspf
-broken_links.txt
-config.h
-files_not_found.txt
 *.tmp
+config.h
+xspf_diff.txt
+broken_links.txt
+files_not_found.txt
+
+

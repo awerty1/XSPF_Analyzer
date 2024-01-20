@@ -2,9 +2,10 @@
 #include <fstream>
 #include <filesystem>
 #include <algorithm>
+
 #include "playlist_analyzer.h"
 
-static std::string generate_multiplied_separator_line(const std::string& separator, size_t length)
+static std::string generate_multiplied_separator_line(const std::string &separator, size_t length)
 {
     std::string multiplied_separator = separator;
     
@@ -278,9 +279,76 @@ void replace_path_smart(const std::string& play_list_path_, const std::string& d
     }
 }
 
-void checkin_xspf_diff(const std::string& play_list_path)
+// Статическая функция для получения имени файла name.xspf
+static std::string get_filename(const std::string& path)
 {
-    std::cout << "Not realized! " + play_list_path << std::endl;
+    std::filesystem::path file_path(path);
+    return file_path.filename().string();
+}
+
+// Cтатическая функция для чтения плейлиста
+static std::vector<play_list_path> read_playlist(const std::string& play_list_path_)
+{
+    std::ifstream file(play_list_path_);
+    std::vector<play_list_path> play_list;
+    std::string line;
+    
+    while (std::getline(file, line))
+    {
+        if (!line.empty() && line.find("<location>") != std::string::npos)
+        {
+            std::string path = line.substr(line.find("<location>") + 10, line.find("</location>") - line.find("<location>") - 10);
+            play_list.emplace_back(play_list_path{path});
+//            play_list_path play_list_item;
+//            play_list_item.path_to_file = path;
+//            play_list.push_back(play_list_item);
+        }
+    }
+    
+    return play_list;
+}
+
+// Функция, которая находит разницу между файлами, например между name.xspf и name2.xspf
+void checkin_xspf_diff(const std::string& play_list_path_, const std::string& second_play_list_path,
+                       const std::string& xspf_diff_path)
+{
+    std::vector<play_list_path> play_list_paths1 = read_playlist(play_list_path_);
+    std::vector<play_list_path> play_list_paths2 = read_playlist(second_play_list_path);
+    
+    std::ofstream diff_file(xspf_diff_path);
+    if (!diff_file)
+    {
+        std::cerr << "Ошибка при создании файла xspf_diff.txt" << std::endl;
+        return;
+    }
+    
+    const std::string play_list_filename = get_filename(play_list_path_);
+    const std::string second_play_list_filename = get_filename(second_play_list_path);
+    
+    diff_file << "Разница между файлами " << play_list_filename
+              << " и " << second_play_list_filename << ":" << std::endl;
+    
+    size_t i = 1;
+    for (const auto& path : play_list_paths2)
+    {
+        bool found_diff = false;
+        for (const auto& p : play_list_paths1)
+        {
+            if (p.path_to_file == path.path_to_file)
+            {
+                found_diff = true;
+                break;
+            }
+        }
+        
+        if (!found_diff)
+        {
+            diff_file << i << "." << path.path_to_file << std::endl;
+            i++;
+        }
+    }
+    
+    std::cout << "Файл xspf_diff.txt успешно создан." << std::endl;
 }
 
 void create_new_file_with_diff(const std::string& play_list_path)

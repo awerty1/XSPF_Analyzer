@@ -1,5 +1,6 @@
 #include <iostream>
 #include <limits>
+
 #include "playlist_analyzer.h"
 
 int main()
@@ -54,7 +55,7 @@ int main()
             break;
         case 4:
             std::cout << "Вы выбрали " << choice << " \"проверку 2х файлов на различия\".\n";
-            checkin_xspf_diff(PLAY_LIST_PATH);
+            checkin_xspf_diff(PLAY_LIST_PATH, SECOND_PLAY_LIST_PATH, XSPF_DIFF_PATH);
             break;
         case 5:
             std::cout << "Вы выбрали " << choice <<  " \"создание нового файла с различиями\".\n";
