@@ -65,5 +65,8 @@ config.h
 xspf_diff.txt
 broken_links.txt
 files_not_found.txt
+playlists_edited/
+trash/
+txt_files/
 
 

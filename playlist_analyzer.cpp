@@ -5,7 +5,15 @@
 
 #include "playlist_analyzer.h"
 
-static std::string generate_multiplied_separator_line(const std::string &separator, size_t length)
+// для препроцессора, чтобы можно было вызвать get_filename в analyze_playlist
+static std::string get_filename(const std::string&);
+static std::pair<std::string, std::string> get_file_path_and_filename_without_extension(const std::string&);
+static std::string generate_multiplied_separator_line(const std::string&, size_t);
+static std::vector<play_list_path> read_playlist(const std::string&);
+
+
+
+static std::string generate_multiplied_separator_line(const std::string& separator, size_t length)
 {
     std::string multiplied_separator = separator;
     
@@ -26,15 +34,16 @@ void analyze_playlist(const std::string& play_list_path_)
     std::ifstream file(play_list_path_);
     if (!file.is_open())
     {
-        throw std::runtime_error("Ошибка открытия файла: " + play_list_path_);
-//        std::cerr << "Ошибка открытия файла: " << play_list_path_ << std::endl;
-//        return;
+        //throw std::runtime_error("Ошибка открытия файла: " + play_list_path_);
+        std::cerr << "Ошибка открытия файла: " << play_list_path_ << std::endl;
+        return;
     }
     
     std::string line;
     // размеры указанны не 0, на случай, если что-то сломается
-    size_t max_length = 30; // Переменная для хранения размера самой длинной ссылки
-    size_t min_length = 30; // Переменная для хранения размера самой короткой ссылки
+    const size_t MAX_PATH_LENGTH = 30;
+    size_t max_length = MAX_PATH_LENGTH; // Переменная для хранения размера самой длинной ссылки
+    size_t min_length = MAX_PATH_LENGTH;; // Переменная для хранения размера самой короткой ссылки
     while (std::getline(file, line))
     {
         if (line.find("<location>") != std::string::npos)
@@ -76,26 +85,35 @@ void analyze_playlist(const std::string& play_list_path_)
     }
     
     // Выравниваем сепараторы по длине самой большой ссылки
-    std::string separator_line_equals = "=";
-    size_t without_msg_eighteen = 18;
-    size_t len_with_eighteen_max = max_length + without_msg_eighteen;
+    
+    
+    const std::string SEPARATOR_LINE_EQUALS = "=";
+    // 18 символов не записывается в файл ""
+    const size_t EXTRA_CHARACTERS = 18;
+    //size_t without_msg_eighteen = 18;
+    size_t len_with_eighteen_max = max_length + EXTRA_CHARACTERS;
     size_t len_without_eighteen_max = max_length;
     std::string multiplied_separator_line_equals =
-            generate_multiplied_separator_line(separator_line_equals, len_with_eighteen_max);
+            generate_multiplied_separator_line(SEPARATOR_LINE_EQUALS, len_with_eighteen_max);
     std::string multiplied_separator_line_equals_without_eighteen =
-            generate_multiplied_separator_line(separator_line_equals, len_without_eighteen_max);
+            generate_multiplied_separator_line(SEPARATOR_LINE_EQUALS, len_without_eighteen_max);
     
     // Выравниваем сепараторы по длине самой короткой ссылки
     std::string separator_line_hash = "#";
-    size_t len_with_eighteen_min = min_length / 2 + without_msg_eighteen;
+    size_t len_with_eighteen_min = min_length / 2 + EXTRA_CHARACTERS;
     std::string multiplied_separator_line_hash =
             generate_multiplied_separator_line(separator_line_hash, len_with_eighteen_min);
     
     
     std::cout << multiplied_separator_line_equals << std::endl << std::endl;
-    output_file << multiplied_separator_line_equals << std::endl << std::endl;
-    std::cout << multiplied_separator_line_hash << " Сломанные ссылки: " << multiplied_separator_line_hash << std::endl;
-    output_file << multiplied_separator_line_hash <<" Сломанные ссылки: "<< multiplied_separator_line_hash << std::endl;
+    output_file << multiplied_separator_line_equals_without_eighteen << std::endl << std::endl;
+    
+    const std::string play_list_filename = get_filename(play_list_path_);
+    std::cout << multiplied_separator_line_hash << " Сломанные ссылки в файле \"" << play_list_filename
+              << "\": " << multiplied_separator_line_hash << std::endl;
+    output_file << multiplied_separator_line_hash << " Сломанные ссылки в файле \"" << play_list_filename
+                << "\": " << multiplied_separator_line_hash << std::endl;
+    
     for (const auto& link : play_list_paths)
     {
         std::ifstream test_file(link.path_to_file);
@@ -111,8 +129,11 @@ void analyze_playlist(const std::string& play_list_path_)
     std::cout << std::endl << multiplied_separator_line_equals << std::endl << std::endl;
     output_file << std::endl << multiplied_separator_line_equals_without_eighteen << std::endl << std::endl;
     
-    std::cout << multiplied_separator_line_hash << " Рабочие ссылки: " << multiplied_separator_line_hash << std::endl;
-    output_file << multiplied_separator_line_hash << " Рабочие ссылки: " << multiplied_separator_line_hash << std::endl;
+    std::cout << multiplied_separator_line_hash << " Рабочие ссылки в файле " << "\"" << play_list_filename
+              << "\": " << multiplied_separator_line_hash << std::endl;
+    output_file << multiplied_separator_line_hash << " Рабочие ссылки в файле " << "\"" << play_list_filename
+                << "\": " << multiplied_separator_line_hash << std::endl;
+    
     for (const auto& link : play_list_paths)
     {
         std::ifstream test_file(link.path_to_file);
@@ -125,14 +146,24 @@ void analyze_playlist(const std::string& play_list_path_)
         test_file.close();
     }
     
+    std::cout << std::endl << multiplied_separator_line_equals << std::endl << std::endl;
+    output_file << std::endl << multiplied_separator_line_equals_without_eighteen << std::endl << std::endl;
+    
     output_file.close();
 }
 
 void replace_path_simple(const std::string& play_list_path_, const std::string& new_path_)
 {
     // 1. Копируем файл плейлиста и дописываем в него новую ссылку
+    std::pair<std::string, std::string> file_info = get_file_path_and_filename_without_extension(play_list_path_);
+    const std::string directory = file_info.first;
+    const std::string name_of_file_without_ext = file_info.second;
+    const std::string dir_plus_file_without_ext = directory + "/playlists_edited/" + name_of_file_without_ext;
+    const std::string new_path_for_output = dir_plus_file_without_ext + std::string("_siedited.xspf");
+    
+    //std::cout << "dir_plus_file_with_ext" << dir_plus_file_with_ext;
     std::ifstream input(play_list_path_);
-    std::ofstream output(play_list_path_ + std::string("_siedited.xspf"));
+    std::ofstream output(new_path_for_output);
     
     if (!input.is_open() || !output.is_open())
     {
@@ -173,13 +204,19 @@ void replace_path_simple(const std::string& play_list_path_, const std::string& 
     input.close();
     output.close();
     
-    std::cout << "Простая замена ссылок завершена. Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
+    std::cout << "Простая замена ссылок завершена, плейлист находится по пути \"" << new_path_for_output << "\"" << std::endl;
+    std::cout <<"Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
 }
 
-void replace_path_smart(const std::string& play_list_path_, const std::string& directory_path)
+void replace_path_smart(const std::string& play_list_path_, const std::string& directory_path,
+                        const std::string& not_found_path)
 {
-    static const std::string new_playlist_path = play_list_path_ + "_smedited.xspf";
-    static const std::string not_found_path = "/home/rastyle/CLionProjects/XSPF_Analyzer/files_not_found.txt";
+    std::pair<std::string, std::string> file_info = get_file_path_and_filename_without_extension(play_list_path_);
+    const std::string directory = file_info.first;
+    const std::string name_of_file_without_ext = file_info.second;
+    const std::string dir_plus_file_with_ext = directory + "/playlists_edited/" + name_of_file_without_ext;
+    
+    static const std::string new_playlist_path = dir_plus_file_with_ext + "_smedited.xspf";
     
     std::ifstream src_file(play_list_path_);
     std::ofstream dest_file(new_playlist_path);
@@ -261,7 +298,7 @@ void replace_path_smart(const std::string& play_list_path_, const std::string& d
         std::filesystem::remove(new_playlist_path);
         std::filesystem::rename(new_playlist_path + ".tmp", new_playlist_path);
         
-        std::cout << "Работа закончена!" << std::endl;
+        std::cout << "Умная замена ссылок завершена, плейлист находится по пути \""<< new_playlist_path << "\"" << std::endl;
     }
     catch (const std::filesystem::filesystem_error& ex)
     {
@@ -279,7 +316,17 @@ void replace_path_smart(const std::string& play_list_path_, const std::string& d
     }
 }
 
-// Статическая функция для получения имени файла name.xspf
+// Статическая функция для получения имени файла без расширения name
+static std::pair<std::string, std::string> get_file_path_and_filename_without_extension(const std::string& path)
+{
+    std::filesystem::path file_path(path);
+    std::string directory = file_path.parent_path().string();
+    std::string  filename_without_ext = file_path.stem().string();
+    
+    return std::make_pair(directory, filename_without_ext);
+}
+
+// Статическая функция для получения имени файла с расширением name.xspf
 static std::string get_filename(const std::string& path)
 {
     std::filesystem::path file_path(path);
@@ -329,6 +376,7 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
               << " и " << second_play_list_filename << ":" << std::endl;
     
     size_t i = 1;
+    diff_file << second_play_list_filename << ":" << std::endl;
     for (const auto& path : play_list_paths2)
     {
         bool found_diff = false;
@@ -348,7 +396,31 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
         }
     }
     
-    std::cout << "Файл xspf_diff.txt успешно создан." << std::endl;
+    // Обновление значения i перед началом второго цикла
+    i = 1;
+    diff_file << play_list_filename << ":" << std::endl;
+    for (const auto& path : play_list_paths1)
+    {
+        bool found_diff = false;
+        for (const auto& p : play_list_paths2)
+        {
+            if (p.path_to_file == path.path_to_file)
+            {
+                found_diff = true;
+                break;
+            }
+        }
+        
+        if (!found_diff)
+        {
+            diff_file << i << "." << path.path_to_file << std::endl;
+            i++;
+        }
+    }
+    
+    std::cout << "Простая замена ссылок завершена, файл \"xspf_diff.txt\" находится по пути \""
+              << xspf_diff_path << "\"" << std::endl;
+    //std::cout << "Файл xspf_diff.txt успешно создан." << std::endl;
 }
 
 void create_new_file_with_diff(const std::string& play_list_path)
