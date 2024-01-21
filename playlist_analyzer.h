@@ -21,7 +21,7 @@ void replace_path_smart(const std::string& PLAY_LIST_PATH, const std::string& DI
                         const std::string& NOT_FOUND_PATH);
 void checkin_xspf_diff(const std::string& PLAY_LIST_PATH, const std::string& SECOND_PLAY_LIST_PATH,
                        const std::string& XSPF_DIFF_PATH);
-void create_new_file_with_diff(const std::string& PLAY_LIST_PATH);
+void create_new_file_with_diff(const std::string& XSPF_DIFF_PATH, const std::string& DIFF_PLAY_LIST_PATH);
 
 
 #endif // PLAYLIST_ANALYZER_H

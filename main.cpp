@@ -59,7 +59,7 @@ int main()
             break;
         case 5:
             std::cout << "Вы выбрали " << "пункт " << choice  <<  " \"создание нового файла с различиями\".\n";
-            create_new_file_with_diff(PLAY_LIST_PATH);
+            create_new_file_with_diff(XSPF_DIFF_PATH, DIFF_PLAY_LIST_PATH);
             break;
         default:
             std::cout << "Неправильный выбор!\n";

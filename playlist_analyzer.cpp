@@ -156,14 +156,16 @@ void replace_path_simple(const std::string& play_list_path_, const std::string& 
 {
     // 1. Копируем файл плейлиста и дописываем в него новую ссылку
     std::pair<std::string, std::string> file_info = get_file_path_and_filename_without_extension(play_list_path_);
-    const std::string directory = file_info.first;
-    const std::string name_of_file_without_ext = file_info.second;
-    const std::string dir_plus_file_without_ext = directory + "/playlists_edited/" + name_of_file_without_ext;
-    const std::string new_path_for_output = dir_plus_file_without_ext + std::string("_siedited.xspf");
+    const std::string DIRECTORY = file_info.first;
+    const std::string NAME_OF_FILE_WITHOUT_EXT = file_info.second;
+    const std::string FOLDER = "/playlists_edited/";
+    const std::string FILE_EXTENSION = std::string("_siedited.xspf");
+    const std::string FULL_PATH_FOR_OUTPUT = DIRECTORY + FOLDER + NAME_OF_FILE_WITHOUT_EXT + FILE_EXTENSION;
+    //const std::string FULL_PATH_FOR_OUTPUT = dir_plus_file_without_ext + std::string("_siedited.xspf");
     
     //std::cout << "dir_plus_file_with_ext" << dir_plus_file_with_ext;
     std::ifstream input(play_list_path_);
-    std::ofstream output(new_path_for_output);
+    std::ofstream output(FULL_PATH_FOR_OUTPUT);
     
     if (!input.is_open() || !output.is_open())
     {
@@ -204,8 +206,8 @@ void replace_path_simple(const std::string& play_list_path_, const std::string& 
     input.close();
     output.close();
     
-    std::cout << "Простая замена ссылок завершена, плейлист находится по пути \"" << new_path_for_output << "\"" << std::endl;
-    std::cout <<"Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
+    std::cout << "Простая замена ссылок завершена, плейлист находится по пути \"" << FULL_PATH_FOR_OUTPUT << "\"" << std::endl;
+    std::cout << "Новый путь: " << "\"" << new_path_ << "\"" << std::endl;
 }
 
 void replace_path_smart(const std::string& play_list_path_, const std::string& directory_path,
@@ -377,12 +379,12 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
     
     size_t i = 1;
     diff_file << second_play_list_filename << ":" << std::endl;
-    for (const auto& path : play_list_paths2)
+    for (const auto& path2 : play_list_paths2)
     {
         bool found_diff = false;
-        for (const auto& p : play_list_paths1)
+        for (const auto& path1 : play_list_paths1)
         {
-            if (p.path_to_file == path.path_to_file)
+            if (path1.path_to_file == path2.path_to_file)
             {
                 found_diff = true;
                 break;
@@ -391,7 +393,7 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
         
         if (!found_diff)
         {
-            diff_file << i << "." << path.path_to_file << std::endl;
+            diff_file << i << "." << path2.path_to_file << std::endl;
             i++;
         }
     }
@@ -399,12 +401,12 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
     // Обновление значения i перед началом второго цикла
     i = 1;
     diff_file << play_list_filename << ":" << std::endl;
-    for (const auto& path : play_list_paths1)
+    for (const auto& path1 : play_list_paths1)
     {
         bool found_diff = false;
-        for (const auto& p : play_list_paths2)
+        for (const auto& path2 : play_list_paths2)
         {
-            if (p.path_to_file == path.path_to_file)
+            if (path2.path_to_file == path1.path_to_file)
             {
                 found_diff = true;
                 break;
@@ -413,7 +415,7 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
         
         if (!found_diff)
         {
-            diff_file << i << "." << path.path_to_file << std::endl;
+            diff_file << i << "." << path1.path_to_file << std::endl;
             i++;
         }
     }
@@ -423,7 +425,65 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
     //std::cout << "Файл xspf_diff.txt успешно создан." << std::endl;
 }
 
-void create_new_file_with_diff(const std::string& play_list_path)
+void create_new_file_with_diff(const std::string& diff_file_path, const std::string& output_file_path)
 {
-    std::cout << "Not realized! " + play_list_path << std::endl;
+    // Открываем файл с разницей
+    std::ifstream diff_file(diff_file_path);
+    if (!diff_file)
+    {
+        std::cerr << "Не удалось открыть файл с разницей." << std::endl;
+        return;
+    }
+    
+    // Открываем файл для записи XSPF
+    std::ofstream xspf_file(output_file_path);
+    if (!xspf_file)
+    {
+        std::cerr << "Не удалось создать файл XSPF." << std::endl;
+        return;
+    }
+    
+    // Записываем заголовок XSPF
+    xspf_file << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+    xspf_file << "<playlist xmlns=\"http://xspf.org/ns/0/\" xmlns:vlc=\"http://www.videolan.org/vlc/playlist/ns/0/\" version=\"1\">\n";
+    xspf_file << "\t<title>Плейлист</title>\n";
+    xspf_file << "\t<trackList>\n";
+    
+    std::string line;
+    size_t i = 0;
+    while (std::getline(diff_file, line))
+    {
+        // Ищем строки, содержащие пути файлов
+        if (line.find("file:///") != std::string::npos)
+        {
+            // Удаляем префикс "playlist2.xspf:" и пробелы в начале строки
+            line = line.substr(line.find_first_not_of(" \t", line.find('f')));
+            //std::cout << "test line" << line;
+            
+            // Записываем путь в <location>
+            xspf_file << "\t\t<track>\n";
+            //xspf_file << line;
+            xspf_file << "\t\t\t<location>" << line << "</location>\n";
+            xspf_file << "\t\t\t<duration>0</duration>\n";
+            xspf_file << "\t\t\t<extension application=\"http://www.videolan.org/vlc/playlist/0\">\n";
+            xspf_file << "\t\t\t\t<vlc:id>"<< i <<"</vlc:id>\n";
+            xspf_file << "\t\t\t</extension>\n";
+            xspf_file << "\t\t</track>\n";
+            
+            i++;
+        }
+    }
+    
+    // Завершаем файл XSPF
+    xspf_file << "\t</trackList>\n";
+    xspf_file << "\t<extension application=\"http://www.videolan.org/vlc/playlist/0\">\n";
+    for (size_t j = 0; j < i; j++)
+    {
+        xspf_file << "\t\t<vlc:item tid=\"" << j << "\"/>\n";
+    }
+    xspf_file << "\t</extension>\n";
+    xspf_file << "</playlist>\n";
+    
+    std::cout << "Создание плейлиста из разницы \"xspf_diff.txt\" - завершено, файл \"diff_playlist.xspf\" находится по пути \""
+              << output_file_path <<"\"" << std::endl;
 }

@@ -21,4 +21,4 @@ This feature helps you keep your playlist up to date by adding any new files tha
 3. For "smart replacing paths" will create new one with added `_smedited` text in name of file `.xspf`. 
 Also, will be created `file_not_found.txt`
 4. For "checking 2 files XSPF for difference" will create `xspf_diff.txt` file with report.
-5. 
+5. For "create a new file with new files by difference" will create `diff_playlist.xspf` playlist.
