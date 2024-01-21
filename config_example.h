@@ -4,6 +4,7 @@
 // Пути до текстовых файлов .txt
 const auto SAVED_FILE_PATH = "/path/to/broken_links/file/broken_links.txt";
 const auto XSPF_DIFF_PATH = "/path/to/broken_links/file/xspf_diff.txt";
+const auto NOT_FOUND_PATH = "/path/to/broken_links/file/files_not_found.txt"
 
 // Пути до файлов .xspf
 const auto PLAY_LIST_PATH = "/path/to/playlist/file/playlist.xspf";
