@@ -9,6 +9,7 @@ const auto NOT_FOUND_PATH = "/path/to/broken_links/file/files_not_found.txt"
 // Пути до файлов .xspf
 const auto PLAY_LIST_PATH = "/path/to/playlist/file/playlist.xspf";
 const auto SECOND_PLAY_LIST_PATH = "/path/to/playlist/file/playlist2.xspf";
+const auto DIFF_PLAY_LIST_PATH = "/path/to/playlist/file/diff_playlist.xspf";
 
 // Пути до папок
 const auto NEW_PATH = "/new_path/to/file";
