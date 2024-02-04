@@ -15,11 +15,11 @@ struct play_list_path
 
 // Функции для анализа плейлиста
 //std::string generate_multiplied_separator_line(const std::string& separator, size_t length);
-void analyze_playlist(const std::string& PLAY_LIST_PATH);
-void replace_path_simple(const std::string& PLAY_LIST_PATH, const std::string& NEW_PATH);
-void replace_path_smart(const std::string& PLAY_LIST_PATH, const std::string& DIRECTORY_PATH,
+void analyze_playlist(const std::string& FIRST_PLAY_LIST_PATH);
+void replace_path_simple(const std::string& FIRST_PLAY_LIST_PATH, const std::string& NEW_PATH);
+void replace_path_smart(const std::string& FIRST_PLAY_LIST_PATH, const std::string& DIRECTORY_PATH,
                         const std::string& NOT_FOUND_PATH);
-void checkin_xspf_diff(const std::string& PLAY_LIST_PATH, const std::string& SECOND_PLAY_LIST_PATH,
+void checkin_xspf_diff(const std::string& FIRST_PLAY_LIST_PATH, const std::string& SECOND_PLAY_LIST_PATH,
                        const std::string& XSPF_DIFF_PATH);
 void create_new_file_with_diff(const std::string& XSPF_DIFF_PATH, const std::string& DIFF_PLAY_LIST_PATH);
 

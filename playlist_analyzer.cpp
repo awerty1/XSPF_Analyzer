@@ -247,6 +247,8 @@ void replace_path_smart(const std::string& play_list_path_, const std::string& d
         }
         
         std::string line;
+        size_t count_not_found_files = 0;
+        std::vector<std::string> not_found_files;
         
         while (std::getline(playlist_file, line))
         {
@@ -286,11 +288,19 @@ void replace_path_smart(const std::string& play_list_path_, const std::string& d
                 }
                 else
                 {
-                    not_found_file << file_name << std::endl;
+                    //not_found_file << file_name << std::endl;
+                    not_found_files.push_back(file_name);
+                    count_not_found_files++;
                 }
             }
             
             temp_file << line << std::endl;
+        }
+        
+        not_found_file << "Отсутствующие файлы:\n" << std::endl;
+        for (const auto& not_found_file_name : not_found_files)
+        {
+            not_found_file << not_found_file_name << std::endl;
         }
         
         playlist_file.close();
@@ -301,6 +311,7 @@ void replace_path_smart(const std::string& play_list_path_, const std::string& d
         std::filesystem::rename(new_playlist_path + ".tmp", new_playlist_path);
         
         std::cout << "Умная замена ссылок завершена, плейлист находится по пути \""<< new_playlist_path << "\"" << std::endl;
+        std::cout << "Количество не найденных файлов: " << count_not_found_files << std::endl;
     }
     catch (const std::filesystem::filesystem_error& ex)
     {
@@ -375,7 +386,7 @@ void checkin_xspf_diff(const std::string& play_list_path_, const std::string& se
     const std::string second_play_list_filename = get_filename(second_play_list_path);
     
     diff_file << "Разница между файлами " << play_list_filename
-              << " и " << second_play_list_filename << ":" << std::endl;
+              << " и " << second_play_list_filename << ":\n" << std::endl;
     
     size_t i = 1;
     diff_file << second_play_list_filename << ":" << std::endl;
