@@ -43,19 +43,19 @@ int main()
     {
         case 1:
             std::cout << "Вы выбрали " << "пункт " << choice << " \"анализ плейлиста\".\n";
-            analyze_playlist(PLAY_LIST_PATH);
+            analyze_playlist(FIRST_PLAY_LIST_PATH);
             break;
         case 2:
             std::cout << "Вы выбрали " << "пункт " << choice << " \"простую замену пути\".\n";
-            replace_path_simple(PLAY_LIST_PATH, NEW_PATH);
+            replace_path_simple(FIRST_PLAY_LIST_PATH, NEW_PATH);
             break;
         case 3:
             std::cout << "Вы выбрали " << "пункт " << choice << " \"умную замену путей\".\n";
-            replace_path_smart(PLAY_LIST_PATH, DIRECTORY_PATH, NOT_FOUND_PATH);
+            replace_path_smart(FIRST_PLAY_LIST_PATH, DIRECTORY_PATH, NOT_FOUND_PATH);
             break;
         case 4:
             std::cout << "Вы выбрали " << "пункт " <<  choice << " \"проверку 2х файлов на различия\".\n";
-            checkin_xspf_diff(PLAY_LIST_PATH, SECOND_PLAY_LIST_PATH, XSPF_DIFF_PATH);
+            checkin_xspf_diff(FIRST_PLAY_LIST_PATH, SECOND_PLAY_LIST_PATH, XSPF_DIFF_PATH);
             break;
         case 5:
             std::cout << "Вы выбрали " << "пункт " << choice  <<  " \"создание нового файла с различиями\".\n";
